@@ -8,6 +8,7 @@ import Queue #if you dequeue an empty queue this will block unless you set the p
 
 #global throttle variable to be accessed by any thread
 throttle = 1.0
+job_queue = Queue.Queue()
 
 #make sure to install psutil before running
 def main():
@@ -25,12 +26,20 @@ def main():
 		A.append(1.111111)
 
 
+class Job:
+	def __init__(self, job_id, data_slice):
+		self.job_id = job_id
+		self.data = data_slice
 
 
 #write all helper functions here
 #this is a high level overview that might help, feel free to change
 def bootstrap_phase():
 	#chunk workload into jobs
+	#with 512 jobs, the job length should be 1024*1024*32/512 = 65536
+	for i in range(512):
+		job_queue.put()
+
 	#divide number of jobs in half
 	#transfer half the jobs to the remote node
 
