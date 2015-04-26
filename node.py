@@ -40,10 +40,9 @@ def main():
 		bootstrap_phase()
 
 	# not sure what to do now
-	while True:
-		jobs = my_transfer.read_array_of_jobs()
+	jobs = my_transfer.read_array_of_jobs() # blocking
 
-#ignore what spec says, chunk first, divide later (Piazza @288)
+# assumes only called from the local node
 def bootstrap_phase(initializer=lambda el: 1.111111):
 	"""
 	chunk workload into jobs and send half of them to the other node
@@ -61,7 +60,7 @@ def bootstrap_phase(initializer=lambda el: 1.111111):
 		offset += elements_per_job
 		jobs.append(Job(i, job_data))
 
-	#divide number of jobs in half
+	# divide number of jobs in half
 	my_half    = jobs[:num_jobs/2]
 	other_half = jobs[num_jobs/2:]
 
@@ -69,7 +68,7 @@ def bootstrap_phase(initializer=lambda el: 1.111111):
 	for job in my_half:
 		job_queue.put(job)
 
-	#transfer half the jobs to the remote node
+	# transfer half the jobs to the remote node
 	my_transfer.write_array_of_jobs(other_half)
 
 def processing_phase():
@@ -80,8 +79,6 @@ def aggregation_phase():
 	#transfer all results from remote to local node
 	pass
 
-def transfer_manager():
-	pass
 def worker_thread():
 	pass
 def state_manager():
