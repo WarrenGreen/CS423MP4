@@ -5,30 +5,50 @@ import socket #easymode socket library
 import argparse #this library just grabs command line arguments, its extremely powerful but has confusing documentation
 import pickle #use this library for transfering jobs -- sock.send(pickle.dumps(data)), pickle.loads(sock.recv(num_bytes))
 import Queue #if you dequeue an empty queue this will block unless you set the parameter right, be careful
+from transfer import TransferManager
 
 #global throttle variable to be accessed by any thread
 throttle = 1.0
 job_queue = Queue.Queue()
 
-#make sure to install psutil before running
-def main():
-	parser = argparse.ArgumentParser()
-	parser.add_argument('--node', choices=['remote', 'local'], nargs=1, type=str, required=True)
-
-	#node now contains the string value 'remote' or 'local'
-	node = parser.parse_args().node[0]
+# vars that are (probably) not thread safe
+my_transfer = None
 
 class Job:
 	def __init__(self, job_id, data_slice):
 		self.job_id = job_id
 		self.data = data_slice
 
-#write all helper functions here
-#this is a high level overview that might help, feel free to change
-def bootstrap_phase(initializer=lambda el: 1.111111):
-	#chunk workload into jobs
-	#with 512 jobs, the job length should be 1024*1024*32/512 = 65536
+#make sure to install psutil before running
+def main():
+	global my_transfer
+	parser = argparse.ArgumentParser()
+	parser.add_argument("host")
+	parser.add_argument("port")
+	parser.add_argument('--node', choices=['remote', 'local'], nargs=1, type=str, required=True)
 
+	#node now contains the string value 'remote' or 'local'
+	args = parser.parse_args()
+	node = args.node[0]
+	host = args.host
+	port = int(args.port)
+
+	if node == 'remote':
+		my_transfer = TransferManager(host, port, slave=True)
+	else:
+		my_transfer = TransferManager(host, port)
+		bootstrap_phase()
+
+	# not sure what to do now
+	while True:
+		jobs = my_transfer.read_array_of_jobs()
+
+#ignore what spec says, chunk first, divide later (Piazza @288)
+def bootstrap_phase(initializer=lambda el: 1.111111):
+	"""
+	chunk workload into jobs and send half of them to the other node
+	with 512 jobs, the job length should be 1024*1024*32/512 = 65536
+	"""
 	jobs = []
 
 	total_size = 1024*1024*32
@@ -42,10 +62,16 @@ def bootstrap_phase(initializer=lambda el: 1.111111):
 		jobs.append(Job(i, job_data))
 
 	#divide number of jobs in half
-	#transfer half the jobs to the remote node
+	my_half    = jobs[:num_jobs/2]
+	other_half = jobs[num_jobs/2:]
 
-	#ignore what spec says, chunk first, divide later (Piazza @288)
-	pass
+	# throw each job in my half on the queue
+	for job in my_half:
+		job_queue.put(job)
+
+	#transfer half the jobs to the remote node
+	my_transfer.write_array_of_jobs(other_half)
+
 def processing_phase():
 	#launch worker thread
 	#launch load balancer
