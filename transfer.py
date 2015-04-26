@@ -47,7 +47,7 @@ class TransferManager:
         for job in jobs:
             _write_data(self.socket, pickle.dumps(job))
 
-    def read_array_of_jobs(self):
+    def read_jobs(self):
         number_of_jobs = int(_read_data(self.socket))
 
         for i in range(number_of_jobs):
