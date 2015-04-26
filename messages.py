@@ -21,11 +21,14 @@ def _read_data(socket):
         return buf
 
     length_data = recvall(4)
+    if length_data == None:
+        return None
+
     length, = struct.unpack('!I', length_data)
 
     return recvall(length)
 
-class TransferManager:
+class MessageManager:
     def __init__(self, host, port, slave=False):
         self.slave = slave
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -43,15 +46,25 @@ class TransferManager:
             self.socket = conn
 
     def write_array_of_jobs(self, jobs):
-        _write_data(self.socket, str(len(jobs)))
         for job in jobs:
-            _write_data(self.socket, pickle.dumps(job))
+            message = {
+                    'type': 'job',
+                    'payload': pickle.dumps(job)
+            }
+            _write_data(self.socket, pickle.dumps(message))
 
-    def read_jobs(self):
-        number_of_jobs = int(_read_data(self.socket))
+    def read_message(self):
+        message = _read_data(self.socket)
 
-        for i in range(number_of_jobs):
-            yield pickle.loads(_read_data(self.socket))
+        if message == None:
+            return None
+
+        partial = pickle.loads(message)
+
+        return {
+                'type': partial['type'],
+                'payload': pickle.loads(partial['payload'])
+        }
 
     def shutdown(self):
         if not self.slave:

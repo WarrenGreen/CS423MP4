@@ -5,7 +5,7 @@ import socket #easymode socket library
 import argparse #this library just grabs command line arguments, its extremely powerful but has confusing documentation
 import pickle #use this library for transfering jobs -- sock.send(pickle.dumps(data)), pickle.loads(sock.recv(num_bytes))
 import Queue #if you dequeue an empty queue this will block unless you set the parameter right, be careful
-from transfer import TransferManager
+from messages import MessageManager
 import sys
 import time
 
@@ -18,7 +18,7 @@ job_queue = Queue.Queue()
 done_jobs = Queue.Queue()
 
 # vars that are (probably) not thread safe
-my_transfer = None
+message_manager = None
 stopping = False
 
 class Job:
@@ -33,7 +33,7 @@ class Job:
 
 #make sure to install psutil before running
 def main():
-	global my_transfer, stopping, throttle
+	global message_manager, stopping, throttle
 
 	parser = argparse.ArgumentParser()
 	parser.add_argument("host")
@@ -48,25 +48,24 @@ def main():
 
 	if node == 'remote':
 		# throttle = 0.5
-		my_transfer = TransferManager(host, port, slave=True)
-
-		for job in my_transfer.read_jobs():
-			job_queue.put(job)
+		message_manager = MessageManager(host, port, slave=True)
 
 	else:
-		my_transfer = TransferManager(host, port)
+		message_manager = MessageManager(host, port)
 		bootstrap_phase()
 
 	processing_phase()
 
 	if node == 'remote':
-		my_transfer.shutdown()
+		message_manager.shutdown()
 
 # assumes only called from the local node
 def bootstrap_phase():
 	jobs = []
 
-	total_size = 1024*1024*32
+	# total_size = 1024*1024*32
+	# num_jobs = 512
+	total_size = 1024*32
 	num_jobs = 512
 	elements_per_job = total_size / num_jobs
 
@@ -83,7 +82,7 @@ def bootstrap_phase():
 		job_queue.put(job)
 
 	# transfer half the jobs to the remote node
-	my_transfer.write_array_of_jobs(other_half)
+	message_manager.write_array_of_jobs(other_half)
 
 def processing_phase():
 	# launch worker thread
@@ -92,7 +91,18 @@ def processing_phase():
 
 	worker.start()
 
-	#launch load balancer
+	# launch load balancer
+	print "Waiting for message"
+	message = message_manager.read_message()
+
+	while True:
+		if message['type'] == 'job':
+			job_queue.put(message['payload'])
+
+		if message['type'] == 'done':
+			break
+
+		message = message_manager.read_message()
 
 	stopping = True
 	worker.join()
