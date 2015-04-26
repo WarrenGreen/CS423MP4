@@ -7,6 +7,10 @@ import pickle #use this library for transfering jobs -- sock.send(pickle.dumps(d
 import Queue #if you dequeue an empty queue this will block unless you set the parameter right, be careful
 from transfer import TransferManager
 import sys
+import time
+
+# http://stackoverflow.com/questions/5998245/get-current-time-in-milliseconds-in-python
+current_milli_time = lambda: int(round(time.time() * 1000))
 
 #global throttle variable to be accessed by any thread
 throttle = 1.0
@@ -21,9 +25,13 @@ class Job:
 		self.job_id = job_id
 		self.data = data_slice
 
+	def compute(self):
+		for i, el in enumerate(self.data):
+			self.data[i] = el + 1.111111
+
 #make sure to install psutil before running
 def main():
-	global my_transfer, stopping
+	global my_transfer, stopping, throttle
 
 	parser = argparse.ArgumentParser()
 	parser.add_argument("host")
@@ -43,6 +51,7 @@ def main():
 	worker.start()
 
 	if node == 'remote':
+		throttle = 0.5
 		my_transfer = TransferManager(host, port, slave=True)
 
 		# read_jobs is a generator
@@ -91,16 +100,34 @@ def aggregation_phase():
 	#transfer all results from remote to local node
 	pass
 
+# @293
+# @329
+# assuming every job takes about the same amount of time to process, if we sleep
+# for x % of the last jobs processing time we will get roughly the throttling we
+# have asked for
 def worker_thread():
 	global stopping
 	jobs_seen = 0
 
 	job = job_queue.get()
 
-	while not stopping:
+	while not stopping or not job_queue.empty():
 		if job != None:
 			jobs_seen += 1
-			print ('\r%d' % job.job_id),
+
+			before = current_milli_time()
+
+			job.compute()
+
+			after = current_milli_time()
+
+			elapsed = after - before
+			sleep_amount = elapsed * (1.0 - throttle)
+
+			time.sleep(sleep_amount)
+
+			print ('\rprocessing job: %d' % job.job_id),
+			print ("sleeping for %f" % sleep_amount),
 			sys.stdout.flush()
 
 		try:
