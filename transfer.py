@@ -50,12 +50,8 @@ class TransferManager:
     def read_array_of_jobs(self):
         number_of_jobs = int(_read_data(self.socket))
 
-        jobs = []
         for i in range(number_of_jobs):
-            job = _read_data(self.socket)
-            jobs.append(pickle.loads(job))
-
-        return jobs
+            yield pickle.loads(_read_data(self.socket))
 
     def shutdown(self):
         if not self.slave:
