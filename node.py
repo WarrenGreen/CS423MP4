@@ -18,27 +18,28 @@ def main():
 	#node now contains the string value 'remote' or 'local'
 	node = parser.parse_args().node[0]
 
-
-	#initialize vector A
-	print "initializing work"
-	A = []
-	for i in range(1024*1024*32):
-		A.append(1.111111)
-
-
 class Job:
 	def __init__(self, job_id, data_slice):
 		self.job_id = job_id
 		self.data = data_slice
 
-
 #write all helper functions here
 #this is a high level overview that might help, feel free to change
-def bootstrap_phase():
+def bootstrap_phase(initializer):
 	#chunk workload into jobs
 	#with 512 jobs, the job length should be 1024*1024*32/512 = 65536
-	for i in range(512):
-		job_queue.put()
+
+	jobs = []
+
+	total_size = 1024*1024*32
+	num_jobs = 512
+	elements_per_job = total_size / num_jobs
+
+	offset = 0
+	for i in range(num_jobs):
+		job_data = map(initializer, xrange(offset, offset + elements_per_job))
+		offset += elements_per_job
+		jobs.append(Job(i, job_data))
 
 	#divide number of jobs in half
 	#transfer half the jobs to the remote node
