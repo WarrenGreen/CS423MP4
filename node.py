@@ -26,8 +26,9 @@ class Job:
 		self.data = data_slice
 
 	def compute(self):
-		for i, el in enumerate(self.data):
-			self.data[i] = el + 1.111111
+		for j in xrange(1000):
+			for i, el in enumerate(self.data):
+				self.data[i] = el + 1.111111
 
 #make sure to install psutil before running
 def main():
@@ -44,18 +45,10 @@ def main():
 	host = args.host
 	port = int(args.port)
 
-	# start the thread ahead of time so it can begin processing jobs as soon as they
-	# are available
-	worker = threading.Thread(target=worker_thread)
-	worker.daemon = True
-	worker.start()
-
 	if node == 'remote':
-		throttle = 0.5
+		# throttle = 0.5
 		my_transfer = TransferManager(host, port, slave=True)
 
-		# read_jobs is a generator
-		# so jobs get thrown on the queue the minute the client sees them
 		for job in my_transfer.read_jobs():
 			job_queue.put(job)
 
@@ -63,6 +56,10 @@ def main():
 		my_transfer = TransferManager(host, port)
 		bootstrap_phase()
 
+	worker = threading.Thread(target=worker_thread)
+	worker.daemon = True
+
+	worker.start()
 	stopping = True
 	worker.join()
 
@@ -124,7 +121,7 @@ def worker_thread():
 			elapsed = after - before
 			sleep_amount = elapsed * (1.0 - throttle)
 
-			time.sleep(sleep_amount)
+			time.sleep(sleep_amount / 1000.0)
 
 			print ('\rprocessing job: %d' % job.job_id),
 			print ("sleeping for %f" % sleep_amount),
