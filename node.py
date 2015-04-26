@@ -36,7 +36,7 @@ def main():
 	if node == 'remote':
 		my_transfer = TransferManager(host, port, slave=True)
 
-		# read array of jobs is a generator
+		# read_array_of_jobs is a generator
 		# so jobs get thrown on the queue the minute the client sees them
 		for job in my_transfer.read_array_of_jobs():
 			job_queue.put(job)
