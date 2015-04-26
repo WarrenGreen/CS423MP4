@@ -6,6 +6,7 @@ import argparse #this library just grabs command line arguments, its extremely p
 import pickle #use this library for transfering jobs -- sock.send(pickle.dumps(data)), pickle.loads(sock.recv(num_bytes))
 import Queue #if you dequeue an empty queue this will block unless you set the parameter right, be careful
 from transfer import TransferManager
+import sys
 
 #global throttle variable to be accessed by any thread
 throttle = 1.0
@@ -13,6 +14,7 @@ job_queue = Queue.Queue()
 
 # vars that are (probably) not thread safe
 my_transfer = None
+stopping = False
 
 class Job:
 	def __init__(self, job_id, data_slice):
@@ -21,7 +23,8 @@ class Job:
 
 #make sure to install psutil before running
 def main():
-	global my_transfer
+	global my_transfer, stopping
+
 	parser = argparse.ArgumentParser()
 	parser.add_argument("host")
 	parser.add_argument("port")
@@ -32,6 +35,12 @@ def main():
 	node = args.node[0]
 	host = args.host
 	port = int(args.port)
+
+	# start the thread ahead of time so it can begin processing jobs as soon as they
+	# are available
+	worker = threading.Thread(target=worker_thread)
+	worker.daemon = True
+	worker.start()
 
 	if node == 'remote':
 		my_transfer = TransferManager(host, port, slave=True)
@@ -45,15 +54,11 @@ def main():
 		my_transfer = TransferManager(host, port)
 		bootstrap_phase()
 
-	jobs_seen = 0
-	while not job_queue.empty():
-		job = job_queue.get()
-		print len(job.data)
-		jobs_seen += 1
+	stopping = True
+	worker.join()
 
-	print jobs_seen
-
-	my_transfer.shutdown()
+	if node == 'remote':
+		my_transfer.shutdown()
 
 # assumes only called from the local node
 def bootstrap_phase():
@@ -87,7 +92,26 @@ def aggregation_phase():
 	pass
 
 def worker_thread():
-	pass
+	global stopping
+	jobs_seen = 0
+
+	print "waiting for first element"
+	job = job_queue.get()
+
+	while not stopping:
+		if job != None:
+			jobs_seen += 1
+			print ('\r%d' % job.job_id),
+			sys.stdout.flush()
+
+		try:
+			job = job_queue.get(timeout=5)
+		except Queue.Empty:
+			job = None
+
+	print
+	print 'Saw %d jobs' % jobs_seen
+
 def state_manager():
 	pass
 def adaptor():
