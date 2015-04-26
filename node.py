@@ -25,7 +25,7 @@ class Job:
 
 #write all helper functions here
 #this is a high level overview that might help, feel free to change
-def bootstrap_phase(initializer):
+def bootstrap_phase(initializer=lambda el: 1.111111):
 	#chunk workload into jobs
 	#with 512 jobs, the job length should be 1024*1024*32/512 = 65536
 
