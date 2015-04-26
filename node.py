@@ -15,6 +15,7 @@ current_milli_time = lambda: int(round(time.time() * 1000))
 #global throttle variable to be accessed by any thread
 throttle = 1.0
 job_queue = Queue.Queue()
+done_jobs = Queue.Queue()
 
 # vars that are (probably) not thread safe
 my_transfer = None
@@ -56,12 +57,7 @@ def main():
 		my_transfer = TransferManager(host, port)
 		bootstrap_phase()
 
-	worker = threading.Thread(target=worker_thread)
-	worker.daemon = True
-
-	worker.start()
-	stopping = True
-	worker.join()
+	processing_phase()
 
 	if node == 'remote':
 		my_transfer.shutdown()
@@ -90,11 +86,20 @@ def bootstrap_phase():
 	my_transfer.write_array_of_jobs(other_half)
 
 def processing_phase():
-	#launch worker thread
+	# launch worker thread
+	worker = threading.Thread(target=worker_thread)
+	worker.daemon = True
+
+	worker.start()
+
 	#launch load balancer
-	pass
+
+	stopping = True
+	worker.join()
+
 def aggregation_phase():
 	#transfer all results from remote to local node
+
 	pass
 
 # @293
@@ -115,6 +120,7 @@ def worker_thread():
 			before = current_milli_time()
 
 			job.compute()
+			done_jobs.put(job)
 
 			after = current_milli_time()
 
