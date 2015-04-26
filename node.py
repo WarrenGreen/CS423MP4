@@ -35,29 +35,36 @@ def main():
 
 	if node == 'remote':
 		my_transfer = TransferManager(host, port, slave=True)
+
+		# read array of jobs is a generator
+		# so jobs get thrown on the queue the minute the client sees them
+		for job in my_transfer.read_array_of_jobs():
+			job_queue.put(job)
+
 	else:
 		my_transfer = TransferManager(host, port)
 		bootstrap_phase()
 
-	# not sure what to do now
-	jobs = my_transfer.read_array_of_jobs() # blocking
+	jobs_seen = 0
+	while not job_queue.empty():
+		job = job_queue.get()
+		print len(job.data)
+		jobs_seen += 1
+
+	print jobs_seen
+
+	my_transfer.shutdown()
 
 # assumes only called from the local node
-def bootstrap_phase(initializer=lambda el: 1.111111):
-	"""
-	chunk workload into jobs and send half of them to the other node
-	with 512 jobs, the job length should be 1024*1024*32/512 = 65536
-	"""
+def bootstrap_phase():
 	jobs = []
 
 	total_size = 1024*1024*32
 	num_jobs = 512
 	elements_per_job = total_size / num_jobs
 
-	offset = 0
 	for i in range(num_jobs):
-		job_data = map(initializer, xrange(offset, offset + elements_per_job))
-		offset += elements_per_job
+		job_data = [1.111111 for j in xrange(elements_per_job)]
 		jobs.append(Job(i, job_data))
 
 	# divide number of jobs in half
