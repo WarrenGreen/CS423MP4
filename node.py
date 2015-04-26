@@ -95,7 +95,6 @@ def worker_thread():
 	global stopping
 	jobs_seen = 0
 
-	print "waiting for first element"
 	job = job_queue.get()
 
 	while not stopping:
