@@ -21,6 +21,7 @@ got_user_input = 0
 # vars that are (probably) not thread safe
 message_manager = None
 stopping = False
+done_sent = False
 
 class Job:
 	def __init__(self, job_id, data_slice):
@@ -119,6 +120,13 @@ def processing_phase():
 
 		if message['type'] == 'done':
 			print 'DONE'
+			if(sent_done):
+				stopping = True
+			else if(job_queue.qsize() > 0):
+				message_manager.write_array_of_jobs(job_queue.qsize() /2)
+			else:
+				message_manager.write_done()
+				stopping = True
 			break
 
 		message = message_manager.read_message()
@@ -170,6 +178,8 @@ def worker_thread():
 		try:
 			job = job_queue.get(timeout=5)
 		except Queue.Empty:
+			message_manager.write_done()
+			done_sent = True
 			job = None
 
 	print
