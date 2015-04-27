@@ -184,7 +184,7 @@ def worker_thread():
 	jobs_seen = 0
 
 	job = job_queue.get()
-
+	start = current_milli_time()
 	while not stopping or not job_queue.empty():
 		if job != None:
 			jobs_seen += 1
@@ -205,14 +205,16 @@ def worker_thread():
 			print ("sleeping for %f" % sleep_amount),
 			print ("qsize %d" % job_queue.qsize()),
 			sys.stdout.flush()
-
-			message_manager.write_alert(job_queue.qsize())
+			if current_milli_time() - start >= 10000:
+				message_manager.write_alert(job_queue.qsize())
+				start = current_milli_time()
 
 		try:
 			job = job_queue.get(timeout=5)
 		except Queue.Empty:
-			message_manager.write_done()
-			sent_done = True
+			if not sent_done:
+				message_manager.write_done()
+				sent_done = True
 			job = None
 
 	print
