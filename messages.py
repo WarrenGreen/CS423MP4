@@ -2,10 +2,12 @@ import socket
 import struct
 import cPickle
 import threading
+import zlib
 
 def _write_data(socket, data):
-    socket.sendall(struct.pack('!I', len(data)))
-    socket.send(data)
+    comp_data = zlib.compress(data)
+    socket.sendall(struct.pack('!I', len(comp_data)))
+    socket.send(comp_data)
 
 def _read_data(socket):
     # helper
@@ -27,7 +29,8 @@ def _read_data(socket):
 
     length, = struct.unpack('!I', length_data)
 
-    return recvall(length)
+    comp_data = recvall(length)
+    return zlib.decompress(comp_data)
 
 class MessageManager:
     def __init__(self, host, port, slave=False):
