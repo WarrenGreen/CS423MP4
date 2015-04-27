@@ -205,8 +205,9 @@ def worker_thread():
 		try:
 			job = job_queue.get(timeout=5)
 		except Queue.Empty:
-			message_manager.write_done()
-			sent_done = True
+			if not sent_done:
+				message_manager.write_done()
+				sent_done = True
 			job = None
 
 	print
