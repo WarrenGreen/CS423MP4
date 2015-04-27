@@ -68,7 +68,7 @@ def bootstrap_phase():
 
 	# total_size = 1024*1024*32
 	# num_jobs = 512
-	total_size = 1024*1024
+	total_size = 1024*32
 	num_jobs = 512
 	elements_per_job = total_size / num_jobs
 
@@ -88,7 +88,7 @@ def bootstrap_phase():
 	message_manager.write_array_of_jobs(other_half)
 
 def processing_phase():
-	global stopping
+	global stopping, sent_done
 	# launch worker thread
 	worker = threading.Thread(target=worker_thread)
 	worker.daemon = True
