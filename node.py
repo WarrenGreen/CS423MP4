@@ -99,11 +99,20 @@ def processing_phase():
 		if message['type'] == 'job':
 			job_queue.put(message['payload'])
 
+		if message['type'] == 'alert':
+			other_queue = message['payload']
+			print other_queue
+			if other_queue == 0:
+				message_manager.write_done()
+				break
+
 		if message['type'] == 'done':
+			print 'DONE'
 			break
 
 		message = message_manager.read_message()
 
+	print "out of the loop"
 	stopping = True
 	worker.join()
 
@@ -139,9 +148,11 @@ def worker_thread():
 
 			time.sleep(sleep_amount / 1000.0)
 
-			print ('\rprocessing job: %d' % job.job_id),
-			print ("sleeping for %f" % sleep_amount),
+			# print ('\rprocessing job: %d' % job.job_id),
+			# print ("sleeping for %f" % sleep_amount),
 			sys.stdout.flush()
+
+			message_manager.write_alert(job_queue.qsize())
 
 		try:
 			job = job_queue.get(timeout=5)
