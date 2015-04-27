@@ -64,10 +64,10 @@ def main():
 def bootstrap_phase():
 	jobs = []
 
-	# total_size = 1024*1024*32
-	# num_jobs = 512
-	total_size = 1024*32
+	total_size = 1024*1024*32
 	num_jobs = 512
+	# total_size = 1024*32
+	# num_jobs = 512
 	elements_per_job = total_size / num_jobs
 
 	for i in range(num_jobs):
@@ -108,9 +108,6 @@ def processing_phase():
 			qsize = job_queue.qsize()
 
 			jobs_to_send = []
-			if other_queue > qsize:
-				diff = other_queue - qsize
-				jobs_to_send = [job_queue.get() for i in xrange(diff/2)]
 
 			if qsize > other_queue:
 				diff = qsize - other_queue
@@ -163,7 +160,9 @@ def worker_thread():
 			time.sleep(sleep_amount / 1000.0)
 
 			# print ('\rprocessing job: %d' % job.job_id),
-			# print ("sleeping for %f" % sleep_amount),
+			print ('processed job: %d' % job.job_id)
+			print ("sleeping for %f" % sleep_amount)
+			print "qsize %d" % job_queue.qsize()
 			sys.stdout.flush()
 
 			message_manager.write_alert(job_queue.qsize())

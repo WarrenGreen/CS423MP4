@@ -65,7 +65,6 @@ class MessageManager:
     def write_array_of_jobs(self, jobs):
         self.lock.acquire()
         for job in jobs:
-            print job.job_id
             message = {
                     'type': 'job',
                     'payload': cPickle.dumps(job)
