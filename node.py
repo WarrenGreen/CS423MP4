@@ -21,7 +21,7 @@ got_user_input = 0
 # vars that are (probably) not thread safe
 message_manager = None
 stopping = False
-done_sent = False
+sent_done = False
 
 class Job:
 	def __init__(self, job_id, data_slice):
@@ -149,6 +149,7 @@ def aggregation_phase():
 # have asked for
 def worker_thread():
 	global stopping
+	global sent_done
 	jobs_seen = 0
 
 	job = job_queue.get()
@@ -181,7 +182,7 @@ def worker_thread():
 			job = job_queue.get(timeout=5)
 		except Queue.Empty:
 			message_manager.write_done()
-			done_sent = True
+			sent_done = True
 			job = None
 
 	print
