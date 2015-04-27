@@ -17,7 +17,7 @@ throttle = 1.0
 job_queue = Queue.Queue()
 done_jobs = Queue.Queue()
 
-got_user_input = 0
+tolerance = 0.00001
 # vars that are (probably) not thread safe
 message_manager = None
 stopping = False
@@ -85,6 +85,7 @@ def bootstrap_phase():
 
 	# transfer half the jobs to the remote node
 	message_manager.write_array_of_jobs(other_half)
+	hardware_monitor()
 
 def processing_phase():
 	# launch worker thread
@@ -139,10 +140,32 @@ def processing_phase():
 	stopping = True
 	worker.join()
 
+
 def aggregation_phase():
 	#transfer all results from remote to local node
+	if message_manager.slave:
+		jobs_to_send = [done_jobs.get() for i in xrange(0,done_jobs.length)]
+		message_manager.write_array_of_jobs(jobs_to_send)
+	else:
+		message = message_manager.read_message()
+		done_jobs.put(message['payload'])
+		sums = []
+		while !done_jobs.empty():
+			curr_job = done_jobs.get()
+			curr_sum = 0
+			for i, el in enumerate(self.data):
+				curr_sum += self.data[i]
+			sums.append(curr_sum)
+		correct = 1
+		for s in sums:
+			for r in sums:
+				if abs(s-r) > tolerance:
+					correct = 0
 
-	pass
+		if correct:
+			print "Aggregation was successful"
+		else:
+			print "Aggregation was not successful"
 
 # @293
 # @329
@@ -198,10 +221,10 @@ def listen_for_user():
 
 def hardware_monitor():
 	user_thread = threading.Thread(target=listen_for_user)
-	while not stopping:
-		time.sleep(10)
-		usage = psutil.cpu_percent(interval=1)
-		print ('CPU Utilization: %d %' % usage)
+	# while not stopping:
+	# 	time.sleep(10)
+	# 	usage = psutil.cpu_percent(interval=1)
+	# 	print ('CPU Utilization: %d %' % usage)
 
 
 if __name__ == '__main__':
