@@ -124,14 +124,12 @@ def processing_phase():
 			print 'DONE'
 			if(sent_done):
 				stopping = True
-				print "stopping"
 				break
 			elif(job_queue.qsize() > 0):
 				message_manager.write_array_of_jobs(job_queue.qsize() /2)
 			else:
 				message_manager.write_done()
 				stopping = True
-				print "stopping"
 				break
 
 		message = message_manager.read_message()
