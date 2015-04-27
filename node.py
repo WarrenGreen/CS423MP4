@@ -17,6 +17,7 @@ throttle = 1.0
 job_queue = Queue.Queue()
 done_jobs = Queue.Queue()
 
+got_user_input = 0
 # vars that are (probably) not thread safe
 message_manager = None
 stopping = False
@@ -155,8 +156,19 @@ def state_manager():
 	pass
 def adaptor():
 	pass
-def hardware_monitor(throttle_value, cpu_use):
-	pass
+
+def listen_for_user():
+	while not stopping:
+		u_input = raw_input('Enter throttle value: ')
+		got_user_input = 1
+		throttle = got_user_input
+
+def hardware_monitor():
+	user_thread = threading.Thread(target=listen_for_user)
+	while !got_user_input:
+		time.sleep(5)
+		usage = psutil.cpu_percent(interval=1)
+		throttle=usage/100
 
 
 if __name__ == '__main__':
