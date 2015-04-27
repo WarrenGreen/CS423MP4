@@ -97,6 +97,9 @@ def processing_phase():
 	message = message_manager.read_message()
 
 	while True:
+		if message == None:
+			continue
+
 		if message['type'] == 'job':
 			job_queue.put(message['payload'])
 
@@ -113,7 +116,8 @@ def processing_phase():
 				diff = qsize - other_queue
 				jobs_to_send = [job_queue.get() for i in xrange(diff/2)]
 
-			if len(jobs_to_send) != 0:
+			if len(jobs_to_send) > 0:
+				print "Sending %d jobs to other machine" % len(jobs_to_send)
 				message_manager.write_array_of_jobs(jobs_to_send)
 
 		if message['type'] == 'done':
@@ -185,9 +189,7 @@ def listen_for_user():
 
 def hardware_monitor():
 	user_thread = threading.Thread(target=listen_for_user)
-	
 	usage = psutil.cpu_percent(interval=1)
-	
 
 
 if __name__ == '__main__':

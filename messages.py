@@ -1,6 +1,7 @@
 import socket
 import struct
-import pickle
+import cPickle
+import threading
 
 def _write_data(socket, data):
     socket.sendall(struct.pack('!I', len(data)))
@@ -32,6 +33,7 @@ class MessageManager:
     def __init__(self, host, port, slave=False):
         self.slave = slave
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.lock = threading.Lock()
 
         if slave:
             self.socket.connect((host, port))
@@ -46,23 +48,30 @@ class MessageManager:
             self.socket = conn
 
     def write_done(self):
-        message = {'type': 'done', 'payload': pickle.dumps(None)}
-        _write_data(self.socket, pickle.dumps(message))
+        self.lock.acquire()
+        message = {'type': 'done', 'payload': cPickle.dumps(1)}
+        _write_data(self.socket, cPickle.dumps(message))
+        self.lock.release()
 
     def write_alert(self, alert_value):
+        self.lock.acquire()
         message = {
                 'type': 'alert',
-                'payload': pickle.dumps(alert_value)
+                'payload': cPickle.dumps(alert_value)
         }
-        _write_data(self.socket, pickle.dumps(message))
+        _write_data(self.socket, cPickle.dumps(message))
+        self.lock.release()
 
     def write_array_of_jobs(self, jobs):
+        self.lock.acquire()
         for job in jobs:
+            print job.job_id
             message = {
                     'type': 'job',
-                    'payload': pickle.dumps(job)
+                    'payload': cPickle.dumps(job)
             }
-            _write_data(self.socket, pickle.dumps(message))
+            _write_data(self.socket, cPickle.dumps(message))
+        self.lock.release()
 
     def read_message(self):
         message = _read_data(self.socket)
@@ -70,11 +79,16 @@ class MessageManager:
         if message == None:
             return None
 
-        partial = pickle.loads(message)
+        # print message
+        # print
+        # print
+        # print
+
+        partial = cPickle.loads(message)
 
         return {
                 'type': partial['type'],
-                'payload': pickle.loads(partial['payload'])
+                'payload': cPickle.loads(partial['payload'])
         }
 
     def shutdown(self):
