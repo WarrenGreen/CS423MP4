@@ -45,6 +45,17 @@ class MessageManager:
             print "Master got a connection"
             self.socket = conn
 
+    def write_done(self):
+        message = {'type': 'done', 'payload': pickle.dumps(None)}
+        _write_data(self.socket, pickle.dumps(message))
+
+    def write_alert(self, alert_value):
+        message = {
+                'type': 'alert',
+                'payload': pickle.dumps(alert_value)
+        }
+        _write_data(self.socket, pickle.dumps(message))
+
     def write_array_of_jobs(self, jobs):
         for job in jobs:
             message = {
