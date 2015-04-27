@@ -139,23 +139,30 @@ def processing_phase():
 	stopping = True
 	worker.join()
 
+	aggregation_phase()
+
 
 def aggregation_phase():
 	#transfer all results from remote to local node
 	if message_manager.slave:
-		jobs_to_send = [done_jobs.get() for i in xrange(0,done_jobs.length)]
+		jobs_to_send = [done_jobs.get() for i in xrange(0,done_jobs.qsize())]
 		message_manager.write_array_of_jobs(jobs_to_send)
 	else:
 		message = message_manager.read_message()
+		print message
 		done_jobs.put(message['payload'])
 		sums = []
-		while !done_jobs.empty():
+		while not done_jobs.empty():
 			curr_job = done_jobs.get()
 			curr_sum = 0
-			for i, el in enumerate(self.data):
-				curr_sum += self.data[i]
+
+			print curr_job
+			for i, el in enumerate(curr_job.data):
+				curr_sum += curr_job.data[i]
+
 			sums.append(curr_sum)
 		correct = 1
+
 		for s in sums:
 			for r in sums:
 				if abs(s-r) > tolerance:
