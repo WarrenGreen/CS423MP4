@@ -188,11 +188,6 @@ def worker_thread():
 	print
 	print 'Saw %d jobs' % jobs_seen
 
-def state_manager():
-	pass
-def adaptor():
-	pass
-
 def listen_for_user():
 	while not stopping:
 		u_input = raw_input('Enter throttle value: ')
