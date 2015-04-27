@@ -87,6 +87,7 @@ def bootstrap_phase():
 	message_manager.write_array_of_jobs(other_half)
 
 def processing_phase():
+	global stopping
 	# launch worker thread
 	worker = threading.Thread(target=worker_thread)
 	worker.daemon = True
@@ -115,7 +116,7 @@ def processing_phase():
 				jobs_to_send = [job_queue.get() for i in xrange(diff/2)]
 
 			if len(jobs_to_send) > 0:
-				print "Sending %d jobs to other machine" % len(jobs_to_send)
+				print "\nSending %d jobs to other machine" % len(jobs_to_send)
 				message_manager.write_array_of_jobs(jobs_to_send)
 
 		if message['type'] == 'done':
@@ -171,10 +172,9 @@ def worker_thread():
 
 			time.sleep(sleep_amount / 1000.0)
 
-			# print ('\rprocessing job: %d' % job.job_id),
-			print ('processed job: %d' % job.job_id)
-			print ("sleeping for %f" % sleep_amount)
-			print "qsize %d" % job_queue.qsize()
+			print ('\rprocessing job: %d' % job.job_id),
+			print ("sleeping for %f" % sleep_amount),
+			print ("qsize %d" % job_queue.qsize()),
 			sys.stdout.flush()
 
 			message_manager.write_alert(job_queue.qsize())
