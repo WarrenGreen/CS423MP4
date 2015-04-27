@@ -104,6 +104,7 @@ def processing_phase():
 
 		if message['type'] == 'job':
 			job_queue.put(message['payload'])
+			sent_done = False
 
 		if message['type'] == 'alert':
 			other_queue = message['payload']
