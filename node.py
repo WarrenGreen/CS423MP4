@@ -56,6 +56,7 @@ def main():
 		message_manager = MessageManager(host, port)
 		bootstrap_phase()
 
+	hardware_monitor()
 	processing_phase()
 
 	if node == 'remote':
@@ -65,10 +66,10 @@ def main():
 def bootstrap_phase():
 	jobs = []
 
-	total_size = 1024*1024*32
-	num_jobs = 512
-	# total_size = 1024*32
+	# total_size = 1024*1024*32
 	# num_jobs = 512
+	total_size = 1024*1024
+	num_jobs = 512
 	elements_per_job = total_size / num_jobs
 
 	for i in range(num_jobs):
@@ -85,7 +86,6 @@ def bootstrap_phase():
 
 	# transfer half the jobs to the remote node
 	message_manager.write_array_of_jobs(other_half)
-	hardware_monitor()
 
 def processing_phase():
 	global stopping
@@ -211,6 +211,7 @@ def worker_thread():
 			print ('\rprocessing job: %d' % job.job_id),
 			print ("sleeping for %f" % sleep_amount),
 			print ("qsize %d" % job_queue.qsize()),
+			print ("throttle: %f" % throttle),
 			sys.stdout.flush()
 			if current_milli_time() - start >= 10000:
 				message_manager.write_alert(job_queue.qsize())
@@ -228,18 +229,16 @@ def worker_thread():
 	print 'Saw %d jobs' % jobs_seen
 
 def listen_for_user():
+	global stopping, throttle
+
 	while not stopping:
-		u_input = raw_input('Enter throttle value: ')
-		got_user_input = 1
-		throttle = got_user_input
+		u_input = raw_input()
+		throttle = float(u_input)
 
 def hardware_monitor():
 	user_thread = threading.Thread(target=listen_for_user)
-	# while not stopping:
-	# 	time.sleep(10)
-	# 	usage = psutil.cpu_percent(interval=1)
-	# 	print ('CPU Utilization: %d %' % usage)
-
+	user_thread.daemon = True
+	user_thread.start()
 
 if __name__ == '__main__':
 	main()
