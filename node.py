@@ -65,10 +65,10 @@ def main():
 def bootstrap_phase():
 	jobs = []
 
-	total_size = 1024*1024*32
+	#total_size = 1024*1024*32
+	#num_jobs = 512
+	total_size = 1024*32
 	num_jobs = 512
-	# total_size = 1024*32
-	# num_jobs = 512
 	elements_per_job = total_size / num_jobs
 
 	for i in range(num_jobs):
@@ -122,11 +122,13 @@ def processing_phase():
 			print 'DONE'
 			if(sent_done):
 				stopping = True
-			else if(job_queue.qsize() > 0):
+				print "stopping"
+			elif(job_queue.qsize() > 0):
 				message_manager.write_array_of_jobs(job_queue.qsize() /2)
 			else:
 				message_manager.write_done()
 				stopping = True
+				print "stopping"
 			break
 
 		message = message_manager.read_message()
