@@ -176,10 +176,9 @@ def listen_for_user():
 
 def hardware_monitor():
 	user_thread = threading.Thread(target=listen_for_user)
-	while !got_user_input:
-		time.sleep(5)
-		usage = psutil.cpu_percent(interval=1)
-		throttle=usage/100
+	
+	usage = psutil.cpu_percent(interval=1)
+	
 
 
 if __name__ == '__main__':
