@@ -65,10 +65,10 @@ def main():
 def bootstrap_phase():
 	jobs = []
 
-	#total_size = 1024*1024*32
-	#num_jobs = 512
-	total_size = 1024*32
+	total_size = 1024*1024*32
 	num_jobs = 512
+	# total_size = 1024*32
+	# num_jobs = 512
 	elements_per_job = total_size / num_jobs
 
 	for i in range(num_jobs):
@@ -147,10 +147,17 @@ def aggregation_phase():
 	if message_manager.slave:
 		jobs_to_send = [done_jobs.get() for i in xrange(0,done_jobs.qsize())]
 		message_manager.write_array_of_jobs(jobs_to_send)
+		message_manager.write_done()
+
 	else:
-		message = message_manager.read_message()
-		print message
-		done_jobs.put(message['payload'])
+		while True:
+			message = message_manager.read_message()
+			if message['type'] == 'job':
+				done_jobs.put(message['payload'])
+
+			if message['type'] == 'done':
+				break
+
 		sums = []
 		while not done_jobs.empty():
 			curr_job = done_jobs.get()
