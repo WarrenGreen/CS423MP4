@@ -163,7 +163,6 @@ def aggregation_phase():
 			curr_job = done_jobs.get()
 			curr_sum = 0
 
-			print curr_job
 			for i, el in enumerate(curr_job.data):
 				curr_sum += curr_job.data[i]
 
