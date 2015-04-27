@@ -48,7 +48,7 @@ def main():
 	port = int(args.port)
 
 	if node == 'remote':
-		# throttle = 0.5
+		throttle = 0.1
 		message_manager = MessageManager(host, port, slave=True)
 
 	else:
@@ -102,10 +102,19 @@ def processing_phase():
 
 		if message['type'] == 'alert':
 			other_queue = message['payload']
-			print other_queue
-			if other_queue == 0:
-				message_manager.write_done()
-				break
+			qsize = job_queue.qsize()
+
+			jobs_to_send = []
+			if other_queue > qsize:
+				diff = other_queue - qsize
+				jobs_to_send = [job_queue.get() for i in xrange(diff/2)]
+
+			if qsize > other_queue:
+				diff = qsize - other_queue
+				jobs_to_send = [job_queue.get() for i in xrange(diff/2)]
+
+			if len(jobs_to_send) != 0:
+				message_manager.write_array_of_jobs(jobs_to_send)
 
 		if message['type'] == 'done':
 			print 'DONE'
